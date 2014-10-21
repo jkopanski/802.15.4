@@ -1,0 +1,36 @@
+BREAKDOWN OF BUNDLE BP063-BU-01000-r0p1-00rel0
+
+This directory contains bundled deliverables from ARM. Bundled deliverables
+are a way of grouping deliverables together for ease of use but which also
+need to be identified separately for contractual reasons. This file shows
+the breakdown of the bundled data into its constituent deliverables and
+files.  It is provided mainly for information for delivery tracking, but
+may be useful in the event of problems being found with particular files
+and tracing the origin of the files for communication with ARM's support
+group.
+
+BP063-DC-06002-r0p1-00rel0:
+
+  docs/
+  docs/BP063-RLNC-000313.pdf
+
+BP063-DC-08001-r0p1-00rel0:
+
+  docs/
+  docs/DUI0534B_amba4_axi4_svpa_ug.pdf
+
+BP063-VL-70004-r0p1-00rel0:
+
+  sva/
+  sva/Axi4LitePC_message_defs.v
+  sva/Axi4PC.sv
+  sva/Axi4PC_undefs.v
+  sva/Axi4PC_defs.v
+  sva/Axi4StreamPC_message_undefs.v
+  sva/Axi4LitePC_message_undefs.v
+  sva/Axi4StreamPC.sv
+  sva/Axi4PC_message_undefs.v
+  sva/Axi4PC_message_defs.v
+  sva/Axi4StreamPC_message_defs.v
+  sva/Axi4LitePC.sv
+
