@@ -8,13 +8,33 @@ import chip.mlme as mlme
 import chip.mcps as mcps
 from chip.phy import constants as phyConst
 
-class enum( Enum):
-    FAILURE = 0
-    SUCCESS = 1
+class status( Enum):
+    SUCCESS              =  1
+    INVALID_PARAMETER    =  0
+    FAILURE              =  0
+
+    LIMIT_REACHED        =  0
+    NO_BEACON            = -1
+    SCAN_IN_PROGRESS     = -2
+    COUNTER_ERROR        = -3
+    FRAME_TOO_LONG       = -4
+    UNAVAILABLE_KEY      = -5
+    UNSUPPORTED_SECURITY = -6
+
+    """MLME-SET.confirm status"""
+    READ_ONLY             =  0
+    UNSUPPORTED_ATTRIBUTE = -1
+    INVALID_INDEX         = -2
+
+
+class scanType( Enum):
+    ED      = 0
+    ACTIVE  = 1
+    PASSIVE = 2
+    ORPHAN  = 3
 
 class constants:
-    """MAC layer constants
-    """
+    """MAC layer constants"""
     aBaseSlotDuration         = 60
     aGTSDescPersistenceTime   = 4
     aMaxBeaconOverhead        = 75
@@ -33,8 +53,7 @@ class constants:
     
 
 class pib:
-    """MAC Personal Area Network Information Base
-    """
+    """MAC Personal Area Network Information Base"""
     def __init__( self,
                   macAckWaitDuration,
                   macBattLifeExtPeriods,
@@ -155,10 +174,26 @@ class Mac:
                 logging.debug( "MAC reseting with preserved PIB")
             
             # Wait for reset complete
-            return mlme.reset.confirm( enum.SUCCESS)
+            return mlme.reset.confirm( status.SUCCESS)
 
-        elif isinstance( prmitive, mlme.reset.confirm):
-            logging.debug( "MAC received: MLME-RESET.confirm")
+        elif isinstance( primitive, mlme.set.request):
+            logging.debug( 'MAC received: MLME-SET.request( {0}, {1})'.format( primitive.PIBAttribute, primitive.PIBAttributeValue))
+            if   primitive.PIBAttribute == "macExtendedAddress":
+                res = status.READ_ONLY
+                return mlme.set.confirm( status, primitive.PIBAttribute)
+            elif primitive.PIBAttribute == "macAckWaitDuration":
+                res = status.READ_ONLY
+            elif primitive.PIBAttribute == "macAssociatedPANCoord":
+                if primitive.PIBAttributeValue == True or False:
+                    setattr( self.pib, primitive.PIBAttribute, primitive.PIBAttributeValue)
+                    res = status.SUCCESS
+                else:
+                    res = status.INVALID_PARAMETER
+            else:
+                res = status.UNSUPPORTED_ATTRIBUTE
+            return mlme.set.confirm( res, primitive.PIBAttribute)
+                    
+                    
         elif isinstance( primitive, mcps):
             pass
         else:
