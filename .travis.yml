@@ -1,0 +1,11 @@
+language: python
+python:
+  - "3.4"
+# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+#install: PLEASE CHNAGE ME
+# command to run tests, e.g. python setup.py test
+
+env:
+  - TESTFOLDER=tb
+
+script: "nosetests $TESTFOLDER"
