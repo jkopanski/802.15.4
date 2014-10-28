@@ -1,16 +1,48 @@
 import logging
+import math
 from enum import Enum, unique
 
-class enum( Enum):
-    dB_1 = 1
-    dB_3 = 3
-    dB_6 = 6
 
 class constants:
     """PHY layer constants
     """
     aMaxPHYPacketSize = 127
     aTurnaroundTime   = 12
+
+
+class powerTolerance( Enum):
+    """phyTXPowerTolerance valid entries"""
+    dB_1 = 1
+    dB_3 = 3
+    dB_6 = 6
+
+
+class pulseShape( Enum):
+    """phyUWBCurrentPulseShape valid entries"""
+    MANDATORY = 0
+    COU       = 1
+    CS        = 2
+    LCP       = 4
+
+
+class couPulse( Enum):
+    """phyUWBCoUpulse valid entries"""
+    CCh_1 = 1
+    CCh_2 = 2
+    CCh_3 = 3
+    CCh_4 = 4
+    CCh_5 = 5
+    CCh_6 = 6
+
+
+class csPulse( Enum):
+    """phyUWBCSpulse valid entries"""
+    No_1 = 1
+    No_2 = 2
+    No_3 = 3
+    No_4 = 4
+    No_5 = 5
+    No_6 = 6
 
 
 @unique
@@ -36,9 +68,9 @@ class pib:
                   phyTXPower,
                   phyCCAMode ,
                   phyCurrentPage,
-                  # phyMaxFrameDuration = ,
-                  # phySHRDuration = ,
-                  # phySymbolsPerOctet = ,
+                  phyMaxFrameDuration,
+                  phySHRDuration,
+                  phySymbolsPerOctet
                   # phyPreambleSymbolLength = ,
                   # phyUWBDataRatesSupported = ,
                   # phyCSSLowDataRateSupported = ,
@@ -73,9 +105,9 @@ class pib:
         self.phyTXPower                     = phyTXPower
         self.phyCCAMode                     = phyCCAMode
         self.phyCurrentPage                 = phyCurrentPage
-        # self.phyMaxFrameDuration            = phyMaxFrameDuration
-        # self.phySHRDuration                 = phySHRDuration
-        # self.phySymbolsPerOctet             = phySymbolsPerOctet
+        self.phyMaxFrameDuration            = phyMaxFrameDuration
+        self.phySHRDuration                 = phySHRDuration
+        self.phySymbolsPerOctet             = phySymbolsPerOctet
         # self.phyPreambleSymbolLength        = phyPreambleSymbolLength
         # self.phyUWBDataRatesSupported       = phyUWBDataRatesSupported
         # self.phyCSSLowDataRateSupported     = phyCSSLowDataRateSupported
@@ -107,17 +139,27 @@ class pib:
         
 class Phy:
     def __init__( self, phy):
+        self.kind = phy
         if   phy == phyType.OQPSK:
+            logging.debug( "Creating O-QPSK phy")
             self.pib = pib( phyCurrentChannel    = 0,
                             # TODO: create list
                             phyChannelsSupported = 0,
-                            phyTXPowerTolerance  = enum.dB_1,
+                            phyTXPowerTolerance  = powerTolerance.dB_1,
                             phyTXPower           = 0,
                             phyCCAMode           = 1,
-                            phyCurrentPage       = 0)
-                            # phyMaxFrameDuration  = ,
-                            # phySHRDuration = ,
-                            # phySymbolsPerOctet = ,
+                            phyCurrentPage       = 0,
+                            # phySHRDuration + \
+                            # ( 1.5 + 0.75 * \
+                            # ceil( ( 4.0 / 3.0) * aMaxPHYPacketSize)) * \
+                            # phySymbolsPerOctet
+                            phyMaxFrameDuration  = 8 + \
+                            ( 1.5 + 0.75 * \
+                              math.ceil( 4.0 / 3.0 * \
+                                         constants.aMaxPHYPacketSize)) * \
+                            8,
+                            phySHRDuration       = 8,
+                            phySymbolsPerOctet   = 8)
                             # phyPreambleSymbolLength = ,
                             # phyUWBDataRatesSupported = ,
                             # phyCSSLowDataRateSupported = ,
