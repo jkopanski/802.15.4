@@ -3,6 +3,9 @@
 __pycache__/
 *.py[cod]
 
+### test logfiles ###
+*.log
+
 # C extensions
 *.so
 
