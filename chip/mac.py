@@ -1,4 +1,5 @@
 import logging
+import numbers
 import random
 import math
 from enum import Enum
@@ -10,21 +11,21 @@ from chip.phy import constants as phyConst
 
 class status( Enum):
     SUCCESS              =  1
-    INVALID_PARAMETER    =  0
     FAILURE              =  0
-
-    LIMIT_REACHED        =  0
-    NO_BEACON            = -1
-    SCAN_IN_PROGRESS     = -2
-    COUNTER_ERROR        = -3
-    FRAME_TOO_LONG       = -4
-    UNAVAILABLE_KEY      = -5
-    UNSUPPORTED_SECURITY = -6
+    INVALID_PARAMETER    = -1
 
     """MLME-SET.confirm status"""
-    READ_ONLY             =  0
-    UNSUPPORTED_ATTRIBUTE = -1
-    INVALID_INDEX         = -2
+    READ_ONLY             = -2
+    UNSUPPORTED_ATTRIBUTE = -3
+    INVALID_INDEX         = -4
+
+    LIMIT_REACHED         = -5
+    NO_BEACON             = -6
+    SCAN_IN_PROGRESS      = -7
+    COUNTER_ERROR         = -8
+    FRAME_TOO_LONG        = -9
+    UNAVAILABLE_KEY       = -10
+    UNSUPPORTED_SECURITY  = -11
 
 
 class scanType( Enum):
@@ -155,16 +156,57 @@ class Mac:
         
         if self.phy.kind == chip.phy.phyType.UWB:
             raise BaseExeption
-        
-        self.pib = pib( ackWaitDuration,
-                        6, # FIXME: calculate actual value
-                        maxFrameTotalWaitTime,
-                        0, # FIXME: calculate actual value
-                        0, # FIXME: calculate actual value
-                        0, # FIXME: calculate actual value
-                        2000, # FIXME: calculate based on selected PHY
-                        2000) # FIXME: calculate based on selected PHY
-            
+
+        self._setDefaultPIB()
+
+    def _setDefaultPIB( self):
+        self.pib = { # key: [ value, lower, upper]
+            'macExtendedAddress':           [ None, int( '0x0000000000000001', 16), int( '0xfffffffffffffffe', 16)],
+            'macAckWaitDuration':           [ None, 0, 0],
+            'macAssociatedPANCoord':        [ False, False, True],
+            'macAssociationPermit':         [ False, False, True],
+            'macAutoRequest':               [ True, False, True],
+            'macBattLifeExt':               [ False, False, True],
+            'macBattLifeExtPeriods':        [ None, 6, 41],
+            'macBeaconPayload':             [ None, 0, 2 ** ( 8 * constants.aMaxBeaconPayloadLength)],
+            'macBeaconPayloadLength':       [ 0, 0, constants.aMaxBeaconPayloadLength],
+            'macBeaconOrder':               [ 15, 0, 15],
+            'macBeaconTxTime':              [ int( '0x000000', 16), int( '0x000000', 16), int( '0xffffff', 16)],
+            'macBSN':                       [ random.randint( 0, int( '0xff', 16) + 1), int( '0x00', 16), int( '0xff', 16)], 
+            'macCoordExtendedAddress':      [ None, int( '0x0000000000000001', 16), int( '0xfffffffffffffffe', 16)],
+            'macCoordShortAddress':         [ int( '0xffff', 16), int( '0x0000', 16), int( '0xffff', 16)],
+            'macDSN':                       [ random.randint( 0, int( '0xff', 16) + 1), int( '0x00', 16), int( '0xff', 16)],
+            'macGTSPermit':                 [ True, False, True],
+            'macMaxBE':                     [ 5, 3, 8],
+            'macMaxCSMABackoffs':           [ 4, 0, 5],
+            'macMaxFrameTotalWaitTime':     [ None, None, None],
+            'macMaxFrameRetries':           [ 3, 0, 7],
+            'macMinBE':                     [ 3, 0, 5],
+            'macLIFSPeriod':                [ None, None, None],
+            'macSIFSPeriod':                [ None, None, None],
+            'macPANId':                     [ int( '0xffff', 16), int( '0x0000', 16), int( '0xffff', 16)],
+            'macPromiscuousMode':           [ False, False, True],
+            'macRangingSupported':          [ False, False, True],
+            'macResponseWaitTime':          [ 32, 2, 64],
+            'macRxOnWhenIdle':              [ False, False, True],
+            'macSecurityEnabled':           [ False, False, True],
+            'macShortAddress':              [ int( '0xffff', 16), int( '0x0000', 16), int( '0xffff', 16)],
+            'macSuperframeOrder':           [ 15, 0, 15],
+            'macSyncSymbolOffset':          [ None, None, None],
+            'macTimestampSupported':        [ False, False, True],
+            'macTransactionPersistenceTime':[ int( '0x01f4', 16), int( '0x0000', 16), int( '0xffff', 16)],
+            'macTxControlActiveDuration':   [ None, 0, 100000],
+            'macTxControlPauseDuration':    [ None, 0, 100000],
+            'macTxTotalDuration':           [ 0, int( '0x0', 16), int( '0xffffffff', 16)]
+        }
+
+    def _set_pib_attr( self, attribute, value):
+        if self.pib[attribute][1] <= value <= self.pib[attribute][2]:
+            self.pib[attribute][0] = value
+            return status.SUCCESS
+        else:
+            return status.INVALID_PARAMETER
+
     def command( self, primitive):
         if   isinstance( primitive, mlme.reset.request):
             logging.debug( "MAC received: MLME-RESET.request")
@@ -178,20 +220,225 @@ class Mac:
 
         elif isinstance( primitive, mlme.set.request):
             logging.debug( 'MAC received: MLME-SET.request( {0}, {1})'.format( primitive.PIBAttribute, primitive.PIBAttributeValue))
-            if   primitive.PIBAttribute == "macExtendedAddress":
-                res = status.READ_ONLY
-                return mlme.set.confirm( status, primitive.PIBAttribute)
-            elif primitive.PIBAttribute == "macAckWaitDuration":
-                res = status.READ_ONLY
-            elif primitive.PIBAttribute == "macAssociatedPANCoord":
-                if primitive.PIBAttributeValue == True or False:
-                    setattr( self.pib, primitive.PIBAttribute, primitive.PIBAttributeValue)
-                    res = status.SUCCESS
-                else:
-                    res = status.INVALID_PARAMETER
-            else:
-                res = status.UNSUPPORTED_ATTRIBUTE
-            return mlme.set.confirm( res, primitive.PIBAttribute)
+
+            # check if attribute exists
+            if primitive.PIBAttribute not in self.pib:
+                return mlme.set.confirm( status.UNSUPPORTED_ATTRIBUTE, primitive.PIBAttribute)
+
+            # check if attribute is read only
+            if primitive.PIBAttribute in ["macExtendedAddress",
+                                          "macCoordExtendedAddress",
+                                          "macMaxFrameTotalWaitTime",
+                                          "macLIFSPeriod",
+                                          "macSIFSPeriod",
+                                          "macRangingSupported",
+                                          "macTimestampSupported"]:
+                return mlme.set.confirm( status.READ_ONLY, primitive.PIBAttribute)
+            
+            return mlme.set.confirm( self._set_pib_attr( primitive.PIBAttribute,
+                                                         primitive.PIBAttributeValue),
+                                     primitive.PIBAttribute)
+
+            # elif primitive.PIBAttribute == "macAckWaitDuration":
+            #     res = status.READ_ONLY
+
+            # elif primitive.PIBAttribute == "macAssociatedPANCoord":
+            #     if primitive.PIBAttributeValue == True or False:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macAssociationPermit":
+            #     if primitive.PIBAttributeValue == True or False:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macAutoRequest":
+            #     if primitive.PIBAttributeValue == True or False:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macBattLifeExt":
+            #     if primitive.PIBAttributeValue == True or \
+            #        primitive.PIBAttributeValue == False:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macBattLifeExtPeriods":
+            #     self._set_pib_integer( primitive.PIBAttribute,
+            #                            primitive.PIBAttributeValue,
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 6 <= primitive.PIBAttributeValue <= 41:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macBeaconPayload":
+            #     setattr( self.pib,
+            #              primitive.PIBAttribute,
+            #              primitive.PIBAttributeValue)
+            #     res = status.SUCCESS
+
+            # elif primitive.PIBAttribute == "macBeaconPayloadLength":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= constants.aMaxBeaconPayloadLength:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macBeaconOrder":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= 15:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macBeaconTxTime":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= int( '0xffffff', 16):
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macBSN":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= int( '0xff', 16):
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+            
+            # elif primitive.PIBAttribute == "macCoordExtendedAddress":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 < primitive.PIBAttributeValue < int( '0xffffffffffffffff', 16):
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macCoordShortAddress":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= int( '0xffff', 16):
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macDSN":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= int( '0xff', 16):
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macGTSPermit":
+            #     if primitive.PIBAttributeValue == True or \
+            #        primitive.PIBAttributeValue == False:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macMaxBE":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 3 <= primitive.PIBAttributeValue <= 5:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macMaxCSMABackoffs":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= 5:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macMaxFrameTotalWaitTime":
+            #     # FIXME: calculate range
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= 5:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macMaxFrameRetries":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= 7:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macMinBE":
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= self.pib.macMaxBE:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macLIFSPeriod":
+            #     # FIXME: calculate range
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= 5:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # elif primitive.PIBAttribute == "macSIFSPeriod":
+            #     # FIXME: calculate range
+            #     if isinstance( primitive.PIBAttributeValue, numbers.Integral) and 0 <= primitive.PIBAttributeValue <= 5:
+            #         setattr( self.pib,
+            #                  primitive.PIBAttribute,
+            #                  primitive.PIBAttributeValue)
+            #         res = status.SUCCESS
+            #     else:
+            #         res = status.INVALID_PARAMETER
+
+            # else:
+            #     res = status.UNSUPPORTED_ATTRIBUTE
+
+            # return mlme.set.confirm( res, primitive.PIBAttribute)
                     
                     
         elif isinstance( primitive, mcps):
