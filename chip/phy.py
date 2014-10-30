@@ -3,9 +3,12 @@ import math
 from enum import Enum, unique
 
 
+class PhyFreqError( Exception):
+    pass
+
+
 class constants:
-    """PHY layer constants
-    """
+    """PHY layer constants"""
     aMaxPHYPacketSize = 127
     aTurnaroundTime   = 12
 
@@ -45,10 +48,21 @@ class csPulse( Enum):
     No_6 = 6
 
 
+class band( Enum):
+    """Enumeration defining valid frequency bands"""
+    MHz_780  = 0
+    MHz_868  = 1
+    MHz_915  = 1
+    MHz_950  = 2
+    MHz_2450 = 3
+    UWB_SUB  = 4
+    UWB_LOW  = 5
+    UWB_HI   = 6
+
+
 @unique
 class phyType( Enum):
-    """Enumeration defining phy type
-    """
+    """Enumeration defining phy type"""
     OQPSK = 0
     BPSK  = 1
     ASK   = 2
@@ -138,66 +152,45 @@ class pib:
         
         
 class Phy:
-    def __init__( self, phy):
-        self.kind = phy
-        if   phy == phyType.OQPSK:
-            logging.debug( "Creating O-QPSK phy")
-            self.pib = pib( phyCurrentChannel    = 0,
-                            # TODO: create list
-                            phyChannelsSupported = 0,
-                            phyTXPowerTolerance  = powerTolerance.dB_1,
-                            phyTXPower           = 0,
-                            phyCCAMode           = 1,
-                            phyCurrentPage       = 0,
-                            # phySHRDuration + \
-                            # ( 1.5 + 0.75 * \
-                            # ceil( ( 4.0 / 3.0) * aMaxPHYPacketSize)) * \
-                            # phySymbolsPerOctet
-                            phyMaxFrameDuration  = 8 + \
-                            ( 1.5 + 0.75 * \
-                              math.ceil( 4.0 / 3.0 * \
-                                         constants.aMaxPHYPacketSize)) * \
-                            8,
-                            phySHRDuration       = 8,
-                            phySymbolsPerOctet   = 8)
-                            # phyPreambleSymbolLength = ,
-                            # phyUWBDataRatesSupported = ,
-                            # phyCSSLowDataRateSupported = ,
-                            # phyUWBCoUSupported = ,
-                            # phyUWBCSSupported = ,
-                            # phyUWBLCPSupported = ,
-                            # phyUWBCurrentPulseShape = ,
-                            # phyUWBCoUpulse = ,
-                            # phyUWBCSpulse = ,
-                            # phyUWBLCPWeight1 = ,
-                            # phyUWBLCPWeight2 = ,
-                            # phyUWBLCPWeight3 = ,
-                            # phyUWBLCPWeight4 = ,
-                            # phyUWBLCPDelay2 = ,
-                            # phyUWBLCPDelay3 = ,
-                            # phyUWBLCPDelay4 = ,
-                            # phyRanging = ,
-                            # phyRangingCrystalOffset = ,
-                            # phyRangingDPS = ,
-                            # phyCurrentCode = ,
-                            # phyNativePRF = ,
-                            # phyUWBScanBinsPerChannel = ,
-                            # phyUWBInsertedPreambleInterval = ,
-                            # phyTXRMARKEROffset = ,
-                            # phyRXRMARKEROffset = ,
-                            # phyRFRAMEProcessingTime = ,
-                            # phyCCADuration = )
-        elif phy == phyType.BPSK:
-            pass
-        elif phy == phyType.ASK:
-            pass
-        elif phy == phyType.CSS:
-            pass
-        elif phy == phyType.UWB:
-            pass
-        elif phy == phyType.MPSK:
-            pass
-        elif phy == phyType.GFSK:
-            pass
+    def __init__( self, freq):
+        self.pib = { # key: value
+            'phyCurrentChannel':   None,
+            'phyChannelsSupportd': None,
+            'phyCurrentPage':      None
+        }
+        logging.debug( '{0} created using {1}'.format( repr( self), repr( freq)))
+
+
+class OQPSKPhy( Phy):
+    def __init__( self, freq):
+        if   freq == band.MHz_780:
+            self.pib['phyChannelsSupported'] = [5]
+        elif freq == band.MHz_868 or \
+             freq == band.MHz_915 or \
+             freq == band.MHz_2450:
+            self.pib['phyChannelsSupported'] = [0, 1, 2]
         else:
-            raise BaseException
+            raise PhyFreqError( '{0} is not valid for {1}'
+                                .format( repr( freq), repr(self)))
+
+
+class BPSKPhy( Phy):
+    def __init__( self, freq):
+        if   freq == band.MHz_868 or \
+             freq == band.MHz_915:
+            self.pib['phyChannelsSupported'] = [0, 1, 2]
+        elif freq == band.MHz_950:
+            self.pib['phyChannelsSupported'] = [6]
+        else:
+            raise PhyFreqError( '{0} is not valid for {1}'
+                                .format( repr( freq), repr(self)))
+
+
+class ASKPhy( Phy):
+    def __init__( self, freq):
+        if   freq == band.MHz_868 or \
+             freq == band.MHz_915:
+            self.pib['phyChannelsSupported'] = [0, 1, 2]
+        else:
+            raise PhyFreqError( '{0} is not valid for {1}'
+                                .format( repr( freq), repr(self)))
