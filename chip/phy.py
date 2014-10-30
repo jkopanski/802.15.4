@@ -156,13 +156,21 @@ class Phy:
         self.pib = { # key: value
             'phyCurrentChannel':   None,
             'phyChannelsSupportd': None,
-            'phyCurrentPage':      None
+            'phyCurrentPage':      None,
+            'phySHRDuration':      None,
+            'phySymbolsPerOctet':  None
         }
         logging.debug( '{0} created using {1}'.format( repr( self), repr( freq)))
 
 
 class OQPSKPhy( Phy):
     def __init__( self, freq):
+        super( OQPSKPhy, self).__init__( freq)
+        self.pib['phySHRDuration']      = 5
+        self.pib['phySymbolsPerOctet']  = 2
+        self.pib['phyMaxFrameDuration'] = self.pib['phySHRDuration'] + \
+                                          math.ceil( ( constants.aMaxPHYPacketSize + 1) * \
+                                                     self.pib['phySymbolsPerOctet'])
         if   freq == band.MHz_780:
             self.pib['phyChannelsSupported'] = [5]
         elif freq == band.MHz_868 or \
@@ -176,6 +184,9 @@ class OQPSKPhy( Phy):
 
 class BPSKPhy( Phy):
     def __init__( self, freq):
+        super( BPSKPhy, self).__init__( freq)
+        self.pib['phySHRDuration']     = 5
+        self.pib['phySymbolsPerOctet'] = 8
         if   freq == band.MHz_868 or \
              freq == band.MHz_915:
             self.pib['phyChannelsSupported'] = [0, 1, 2]
@@ -188,6 +199,9 @@ class BPSKPhy( Phy):
 
 class ASKPhy( Phy):
     def __init__( self, freq):
+        super( ASKPhy, self).__init__( freq)
+        self.pib['phySHRDuration']     = 5
+        self.pib['phySymbolsPerOctet'] = 2
         if   freq == band.MHz_868 or \
              freq == band.MHz_915:
             self.pib['phyChannelsSupported'] = [0, 1, 2]

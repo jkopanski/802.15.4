@@ -12,7 +12,7 @@ class TestGetSet( unittest.TestCase):
                              filename = 'test_get_set.log', \
                              filrmode = 'w+', \
                              level    = logging.DEBUG)
-        self.phy = chip.phy.Phy( chip.phy.phyType.OQPSK)
+        self.phy = chip.phy.OQPSKPhy( chip.phy.band.MHz_780)
         self.dut = chip.mac.Mac( self.phy)
 
     def set_param( self, param, lower, upper):

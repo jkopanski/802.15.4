@@ -11,7 +11,7 @@ class TestMAC( unittest.TestCase):
                              filename = 'test_mac.log', \
                              filrmode = 'w+', \
                              level    = logging.DEBUG)
-        self.phy = chip.phy.Phy( chip.phy.phyType.OQPSK)
+        self.phy = chip.phy.OQPSKPhy( chip.phy.band.MHz_780)
         self.dut = chip.mac.Mac( self.phy)
 
     def test_reset( self):

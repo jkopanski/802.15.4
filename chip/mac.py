@@ -52,110 +52,31 @@ class constants:
     aMaxMACSafePayloadSize    = phyConst.aMaxPHYPacketSize - aMaxMPDUUnsecuredOverhead
     aMaxMACPayloadSize        = phyConst.aMaxPHYPacketSize - aMinMPDUOverhead
     
-# replaced by dict
-# class pib:
-#     """MAC Personal Area Network Information Base"""
-#     def __init__( self,
-#                   macAckWaitDuration,
-#                   macBattLifeExtPeriods,
-#                   macMaxFrameTotalWaitTime,
-#                   macLIFSPeriod,
-#                   macSIFSPeriod,
-#                   macSyncSymbolOffset,
-#                   macTxControlActiveDuration,
-#                   macTxControlPauseDuration,
-#                   macExtendedAddress            = 0,
-#                   macAssociatedPANCoord         = False,
-#                   macAssociationPermit          = False,
-#                   macAutoRequest                = True,
-#                   macBattLifeExt                = False,
-#                   macBeaconPayload              = None,
-#                   macBeaconPayloadLength        = 0,
-#                   macBeaconOrder                = 15,
-#                   macBeaconTxTime               = 0,
-#                   macBSN                        = random.randrange( int( '0xff', 16)),
-#                   macCoordExtendedAddress       = None,
-#                   macCoordShortAddress          = int( '0xffff', 16),
-#                   macDSN                        = random.randrange( int( '0xff', 16)),
-#                   macGTSPermit                  = True,
-#                   macMaxBE                      = 5,
-#                   macMaxCSMABackoffs            = 4,
-#                   macMaxFrameRetries            = 3,
-#                   macMinBE                      = 3,
-#                   macPANId                      = int( '0xffff', 16),
-#                   macPromiscuousMode            = False,
-#                   macRangingSupported           = False,
-#                   macResponseWaitTime           = 32,
-#                   macRxOnWhenIdle               = False,
-#                   macSecurityEnabled            = False,
-#                   macShortAddress               = int( '0xffff', 16),
-#                   macSuperframeOrder            = 15,
-#                   macTimestampSupported         = False,
-#                   macTransactionPersistenceTime = int( '0x01f4', 16),
-#                   macTxTotalDuration            = 0):
-#         self.macExtendedAddress            = macExtendedAddress
-#         self.macAckWaitDuration            = macAckWaitDuration
-#         self.macAssociatedPANCoord         = macAssociatedPANCoord
-#         self.macAssociationPermit          = macAssociationPermit
-#         self.macAutoRequest                = macAutoRequest
-#         self.macBattLifeExt                = macBattLifeExt
-#         self.macBattLifeExtPeriods         = macBattLifeExtPeriods
-#         self.macBeaconPayload              = macBeaconPayload
-#         self.macBeaconPayloadLength        = macBeaconPayloadLength
-#         self.macBeaconOrder                = macBeaconOrder
-#         self.macBeaconTxTime               = macBeaconTxTime
-#         self.macBSN                        = macBSN
-#         self.macCoordExtendedAddress       = macCoordExtendedAddress
-#         self.macCoordShortAddress          = macCoordShortAddress
-#         self.macDSN                        = macDSN
-#         self.macGTSPermit                  = macGTSPermit
-#         self.macMaxBE                      = macMaxBE
-#         self.macMaxCSMABackoffs            = macMaxCSMABackoffs
-#         self.macMaxFrameTotalWaitTime      = macMaxFrameTotalWaitTime
-#         self.macMaxFrameRetries            = macMaxFrameRetries
-#         self.macMinBE                      = macMinBE
-#         self.macLIFSPeriod                 = macLIFSPeriod
-#         self.macSIFSPeriod                 = macSIFSPeriod
-#         self.macPANId                      = macPANId
-#         self.macPromiscuousMode            = macPromiscuousMode
-#         self.macRangingSupported           = macRangingSupported
-#         self.macResponseWaitTime           = macResponseWaitTime
-#         self.macRxOnWhenIdle               = macRxOnWhenIdle
-#         self.macSecurityEnabled            = macSecurityEnabled
-#         self.macShortAddress               = macShortAddress
-#         self.macSuperframeOrder            = macSuperframeOrder
-#         self.macSyncSymbolOffset           = macSyncSymbolOffset
-#         self.macTimestampSupported         = macTimestampSupported
-#         self.macTransactionPersistenceTime = macTransactionPersistenceTime
-#         self.macTxControlActiveDuration    = macTxControlActiveDuration
-#         self.macTxControlPauseDuration     = macTxControlPauseDuration
-#         self.macTxTotalDuration            = macTxTotalDuration
-        
 
 class Mac:
     def __init__( self, phy):
         self.phy = phy
-        ackWaitDuration = constants.aUnitBackoffPeriod + \
-                          phyConst.aTurnaroundTime + \
-                          self.phy.pib.phySHRDuration + \
-                          math.ceil( 6 * self.phy.pib.phySymbolsPerOctet)
-        # calculate default value, based on defaluts
-        # proper formulas are in comments
-        # m = min( macMaxBE - macMinBE, macMaxCSMABackoffs)
-        m = min( 5 - 3, 4)
-        sum = 0
-        for k in range( m):
-            # sum += 2 ** ( macMinBE + k)
-            sum += 2 ** ( 3 + k)
+        # ackWaitDuration = constants.aUnitBackoffPeriod + \
+        #                   phyConst.aTurnaroundTime + \
+        #                   self.phy.pib['phySHRDuration'] + \
+        #                   math.ceil( 6 * self.phy.pib['phySymbolsPerOctet'])
+        # # calculate default value, based on defaluts
+        # # proper formulas are in comments
+        # # m = min( macMaxBE - macMinBE, macMaxCSMABackoffs)
+        # m = min( 5 - 3, 4)
+        # sum = 0
+        # for k in range( m):
+        #     # sum += 2 ** ( macMinBE + k)
+        #     sum += 2 ** ( 3 + k)
+        # # maxFrameTotalWaitTime = ( sum + \
+        # #                           ( ( 2 ** macMinBE - 1) * \
+        # #                             ( macMaxCSMABackoffs - m))) * constants.aUnitBackoffPeriod + self.phy.pib.phyMaxFrameDuration
         # maxFrameTotalWaitTime = ( sum + \
-        #                           ( ( 2 ** macMinBE - 1) * \
-        #                             ( macMaxCSMABackoffs - m))) * constants.aUnitBackoffPeriod + self.phy.pib.phyMaxFrameDuration
-        maxFrameTotalWaitTime = ( sum + \
-                                  ( ( 2 ** 3 - 1) * \
-                                    ( 4 - m))) * constants.aUnitBackoffPeriod + self.phy.pib.phyMaxFrameDuration
+        #                           ( ( 2 ** 3 - 1) * \
+        #                             ( 4 - m))) * constants.aUnitBackoffPeriod + self.phy.pib['phyMaxFrameDuration']
         
-        if self.phy.kind == chip.phy.phyType.UWB:
-            raise BaseExeption
+        # if self.phy.kind == chip.phy.phyType.UWB:
+        #     raise BaseExeption
 
         self._setDefaultPIB()
 
@@ -213,13 +134,15 @@ class Mac:
     def _passive_active_scan( self, scan_type):
         for channel in channels:
             if scan_type == scanType.ACTIVE:
+                pass
                 # TODO: Tx Beacon request
                 
             # TODO: Rx Beacon
             # TODO: Rx Beacon
 
     def _orphan_scan( self):
-        
+        pass
+
     def command( self, primitive):
         if   isinstance( primitive, mlme.reset.request):
             logging.debug( "MAC received: MLME-RESET.request")
