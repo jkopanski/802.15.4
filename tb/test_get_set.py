@@ -15,81 +15,59 @@ class TestGetSet( unittest.TestCase):
         self.phy = chip.phy.Phy( chip.phy.phyType.OQPSK)
         self.dut = chip.mac.Mac( self.phy)
 
+    def set_param( self, param, lower, upper):
+        val        = random.randint( lower - 100, math.ceil( 1.5 * upper))
+        set_result = self.dut.command( mlme.set.request( param, val))
+        self.assertTrue( isinstance( set_result, mlme.set.confirm))
+        # perform MLME-GET as well
+        get_result = self.dut.command( mlme.get.request( param))
+        self.assertTrue( isinstance( get_result, mlme.get.confirm))
+        
+        if lower <= val <= upper:
+            self.assertEqual( set_result.status, chip.mac.status.SUCCESS)
+            self.assertEqual( set_result.status, get_result.status)
+        else:
+            self.assertEqual( set_result.status, chip.mac.status.INVALID_PARAMETER)
+            self.assertEqual( self.dut.pib[get_result.PIBAttribute][0],
+                              get_result.PIBAttributeValue)
+
+        result = self.dut.command( mlme.get.request( param))
+        self.assertTrue( isinstance( result, mlme.get.confirm))
+        
     def test_reset( self):
         result = self.dut.command( mlme.reset.request( True))
         self.assertTrue( isinstance( result, mlme.reset.confirm))
         self.assertEqual( result.status, chip.mac.status.SUCCESS)
 
-    def test_set_wrong_attr( self):
+    def test_get_set_wrong_attr( self):
         result = self.dut.command( mlme.set.request( "macWrongAttr", True))
         self.assertTrue( isinstance( result, mlme.set.confirm))
         self.assertEqual( result.status, chip.mac.status.UNSUPPORTED_ATTRIBUTE)
         self.assertEqual( result.PIBAttribute, "macWrongAttr")        
-
-
-    # def test_max_be( self):
-    #     # valid range: 3 -- 5
-    #     len = random.randrange( -2, 5 * 2)
-    #     result = self.dut.command( mlme.set.request( "macMaxBE", len))
-    #     self.assertTrue( isinstance( result, mlme.set.confirm))
-    #     if 3 <= len <= 5:
-    #         self.assertEqual( result.status, chip.mac.status.SUCCESS)
-    #     else:
-    #         self.assertEqual( result.status, chip.mac.status.INVALID_PARAMETER)
-
-    # def test_max_csma_backoffs( self):
-    #     # valid range: 0 -- 5
-    #     len = random.randrange( -2, 5 * 2)
-    #     result = self.dut.command( mlme.set.request( "macMaxCSMABackoffs", len))
-    #     self.assertTrue( isinstance( result, mlme.set.confirm))
-    #     if 0 <= len <= 5:
-    #         self.assertEqual( result.status, chip.mac.status.SUCCESS)
-    #     else:
-    #         self.assertEqual( result.status, chip.mac.status.INVALID_PARAMETER)
-
-    # def test_max_frame_total_wait_time( self):
-    #     # valid range: phy dependent
-    #     # FIXME: calculate range
-    #     len = random.randrange( -2, 5 * 2)
-    #     result = self.dut.command( mlme.set.request( "macMaxFrameTotalWaitTime", len))
-    #     self.assertTrue( isinstance( result, mlme.set.confirm))
-    #     if 0 <= len <= 5:
-    #         self.assertEqual( result.status, chip.mac.status.SUCCESS)
-    #     else:
-    #         self.assertEqual( result.status, chip.mac.status.INVALID_PARAMETER)
-
-    # def test_max_frame_total_wait_time( self):
-    #     # valid range: 0 -- 7
-    #     len = random.randrange( -2, 7 * 2)
-    #     result = self.dut.command( mlme.set.request( "macMaxFrameTotalWaitTime", len))
-    #     self.assertTrue( isinstance( result, mlme.set.confirm))
-    #     if 0 <= len <= 7:
-    #         self.assertEqual( result.status, chip.mac.status.SUCCESS)
-    #     else:
-    #         self.assertEqual( result.status, chip.mac.status.INVALID_PARAMETER)
-
-    def set_param( self, param, lower, upper):
-        val    = random.randint( lower - 100, math.ceil( 1.5 * upper))
-        result = self.dut.command( mlme.set.request( param, val))
-        self.assertTrue( isinstance( result, mlme.set.confirm))
-        if lower <= val <= upper:
-            self.assertEqual( result.status, chip.mac.status.SUCCESS)
-        else:
-            self.assertEqual( result.status, chip.mac.status.INVALID_PARAMETER)
+        result = self.dut.command( mlme.get.request( "macWrongAttr"))
+        self.assertTrue( isinstance( result, mlme.get.confirm))
+        self.assertEqual( result.status, chip.mac.status.UNSUPPORTED_ATTRIBUTE)
+        self.assertEqual( result.PIBAttribute, "macWrongAttr")        
         
     def test_read_only( self):
-        for primitive in ["macExtendedAddress",
-                          "macCoordExtendedAddress",
-                          "macMaxFrameTotalWaitTime",
-                          "macLIFSPeriod",
-                          "macSIFSPeriod",
-                          "macRangingSupported",
-                          "macTimestampSupported"]:
-            result = self.dut.command( mlme.set.request( primitive, True))
-            self.assertTrue( isinstance( result, mlme.set.confirm))
-            self.assertEqual( result.status, chip.mac.status.READ_ONLY)
+        for param in ["macExtendedAddress",
+                      "macCoordExtendedAddress",
+                      "macMaxFrameTotalWaitTime",
+                      "macLIFSPeriod",
+                      "macSIFSPeriod",
+                      "macRangingSupported",
+                      "macTimestampSupported"]:
+            set_result = self.dut.command( mlme.set.request( param, True))
+            self.assertTrue( isinstance( set_result, mlme.set.confirm))
+            self.assertEqual( set_result.status, chip.mac.status.READ_ONLY)
+            # perform MLME-GET as well
+            get_result = self.dut.command( mlme.get.request( param))
+            self.assertTrue( isinstance( get_result, mlme.get.confirm))
+            self.assertEqual( self.dut.pib[get_result.PIBAttribute][0],
+                              get_result.PIBAttributeValue)
 
-    def test_set( self):
+
+    def test_set_get( self):
         self.set_param( "macBattLifeExt", False, True)
         self.set_param( "macBattLifeExtPeriods", 6, 41)
         self.set_param( "macBeaconPayload",

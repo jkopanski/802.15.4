@@ -51,6 +51,24 @@ class scan:
             self.KeyIdMode     = KeySource
             self.KeyIndex      = KeyIndex
 
+
+class get:
+    """MLME-GET"""
+    class request:
+        def __init__( self,
+                      PIBAttribute):
+            self.PIBAttribute = PIBAttribute
+            
+    class confirm:
+        def __init__( self,
+                      status,
+                      PIBAttribute,
+                      PIBAttributeValue):
+            self.status            = status
+            self.PIBAttribute      = PIBAttribute
+            self.PIBAttributeValue = PIBAttributeValue
+
+
 class set:
     """MLME-SET"""
     class request:
