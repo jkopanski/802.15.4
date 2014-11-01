@@ -46,6 +46,17 @@ class TestPHYCreation( unittest.TestCase):
         self.assertRaises( chip.phy.PhyFreqError,
                            chip.phy.ASKPhy, chip.phy.band.UWB_HI)
 
+    def test_css( self):
+        self.assertRaises( chip.phy.PhyFreqError,
+                           chip.phy.CSSPhy, chip.phy.band.MHz_780)
+        self.assertRaises( chip.phy.PhyFreqError,
+                           chip.phy.ASKPhy, chip.phy.band.MHz_2450)
+        self.assertRaises( chip.phy.PhyFreqError,
+                           chip.phy.ASKPhy, chip.phy.band.UWB_SUB)
+        self.assertRaises( chip.phy.PhyFreqError,
+                           chip.phy.ASKPhy, chip.phy.band.UWB_LOW)
+        self.assertRaises( chip.phy.PhyFreqError,
+                           chip.phy.ASKPhy, chip.phy.band.UWB_HI)
 
 if __name__ == '__main__':
     unittest.main()

@@ -208,3 +208,26 @@ class ASKPhy( Phy):
         else:
             raise PhyFreqError( '{0} is not valid for {1}'
                                 .format( repr( freq), repr(self)))
+
+
+class CSSPhy( Phy):
+    def __init__( self, freq):
+        super( CSSPhy, self).__init__( freq)
+        self.pib['phySHRDuration']     = 6
+        self.pib['phySymbolsPerOctet'] = 1
+
+        # TODO: check for optional 250k speed
+        self.pib['phyMaxFrameDuration'] = self.pib['phySHRDuration'] + \
+                                          ( 1.5 + \
+                                            3.0 / 4.0 * \
+                                            math.ceil( 4.0 / 3.0 * \
+                                                       constants.aMaxPHYPacketSize)) * self.pib['phySymbolsPerOctet']
+        if   freq == band.MHz_868 or \
+             freq == band.MHz_915:
+            self.pib['phyChannelsSupported'] = [0, 1, 2]
+        elif freq == band.MHz_950:
+            self.pib['phyChannelsSupported'] = [6]
+        else:
+            raise PhyFreqError( '{0} is not valid for {1}'
+                                .format( repr( freq), repr(self)))
+
