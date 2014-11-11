@@ -3,6 +3,15 @@
 __pycache__/
 *.py[cod]
 
+### virtualenv ###
+bin
+include
+lib
+local
+
+### CoCoTB ###
+sim_build
+
 ### test logfiles ###
 *.log
 
