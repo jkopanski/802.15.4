@@ -12,6 +12,7 @@ man
 
 ### CoCoTB ###
 sim_build
+results.xml
 
 ### test logfiles ###
 *.log
