@@ -2,12 +2,7 @@ language: python
 python:
   - "2.7"
 
-cache: apt
-
 install:
-  - sudo apt-get update -qq
-  - sudo apt-get install iverilog
-  - sudo apt-get install libopenblas-base
   - pip install -r requirements.txt --use-mirrors
 
 env:
