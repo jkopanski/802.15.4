@@ -212,7 +212,9 @@ class OQPSKPhy( Phy):
 
 class BPSKPhy( Phy):
     def __init__( self, freq):
-        super( BPSKPhy, self).__init__( freq)
+        # new-style classes
+        # super( BPSKPhy, self).__init__( freq)
+        Phy.__init__(self, freq)
         self.pib['phySHRDuration']     = 5
         self.pib['phySymbolsPerOctet'] = 8
         if   freq == band.MHz_868 or \
@@ -227,7 +229,9 @@ class BPSKPhy( Phy):
 
 class ASKPhy( Phy):
     def __init__( self, freq):
-        super( ASKPhy, self).__init__( freq)
+        # new-style classes
+        # super( ASKPhy, self).__init__( freq)
+        Phy.__init__(self, freq)
         self.pib['phySHRDuration']     = 5
         self.pib['phySymbolsPerOctet'] = 2
         if   freq == band.MHz_868 or \
@@ -240,7 +244,9 @@ class ASKPhy( Phy):
 
 class CSSPhy( Phy):
     def __init__( self, freq):
-        super( CSSPhy, self).__init__( freq)
+        # new-style classes
+        # super( CSSPhy, self).__init__( freq)
+        Phy.__init__(self, freq)
         self.pib['phySHRDuration']     = 6
         self.pib['phySymbolsPerOctet'] = 1
 
