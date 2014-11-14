@@ -4,6 +4,7 @@ import random
 import math
 from enum import Enum
 
+import chip.bit as bit
 import chip.phy
 import chip.mlme as mlme
 import chip.mcps as mcps
@@ -142,6 +143,34 @@ class Mac:
 
     def _orphan_scan( self):
         pass
+
+
+    def _mpdu( self, mhr, payload, mfr):
+        pass
+
+    def _mhr( self, frame_ctrl, seq_num, addr, shr):
+        pass
+
+
+    def _fcs( self, data):
+        # G16(x) = x^16 + x^12 + x^5 + 1
+        gen = 2 ** 16 + 2 ** 12 + 2 ** 5 + 1
+        # multiply by x^16
+        data <<= 16
+
+        # divide data by G16(x)
+        # no need to check if degree of data si higher since
+        # we multiply it by x^16
+        q  = 0
+        dN = bit.len( data) - 1
+        dD = bit.len( gen) - 1
+        while dN >= dD:
+            d = gen << ( dN - dD)
+            data ^= d
+            dN = bit.len( data) - 1
+        
+        # we are interested only in the rest
+        return data
 
     def command( self, primitive):
         if   isinstance( primitive, mlme.reset.request):

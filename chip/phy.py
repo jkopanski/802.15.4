@@ -1,9 +1,14 @@
 import logging
 import math
+
 from enum import Enum, unique
 
 
 class PhyFreqError( Exception):
+    pass
+
+
+class PPDUError( Exception):
     pass
 
 
@@ -73,8 +78,7 @@ class phyType( Enum):
 
 
 class pib:
-    """PHY Personal Area Network Information Base
-    """
+    """PHY Personal Area Network Information Base"""
     def __init__( self,
                   phyCurrentChannel,
                   phyChannelsSupported,
@@ -158,19 +162,27 @@ class Phy:
             'phyChannelsSupportd': None,
             'phyCurrentPage':      None,
             'phySHRDuration':      None,
-            'phySymbolsPerOctet':  None
+            'phySymbolsPerOctet':  None,
+            'phyLIFSPeriod':       None,
+            'phySIFSPeriod':       None,
         }
         logging.debug( '{0} created using {1}'.format( repr( self), repr( freq)))
 
 
 class OQPSKPhy( Phy):
     def __init__( self, freq):
-        super( OQPSKPhy, self).__init__( freq)
+        # new-style classes
+        # super( OQPSKPhy, self).__init__( freq)
+        Phy.__init__(self, freq)
         self.pib['phySHRDuration']      = 5
         self.pib['phySymbolsPerOctet']  = 2
         self.pib['phyMaxFrameDuration'] = self.pib['phySHRDuration'] + \
                                           math.ceil( ( constants.aMaxPHYPacketSize + 1) * \
                                                      self.pib['phySymbolsPerOctet'])
+        """According to 8.1.3 :cite:`std-2011`"""
+        self.pib['phyLIFSPeriod'] = 40
+        self.pib['phySIFSPeriod'] = 12
+
         if   freq == band.MHz_780:
             self.pib['phyChannelsSupported'] = [5]
         elif freq == band.MHz_868 or \
@@ -180,6 +192,22 @@ class OQPSKPhy( Phy):
         else:
             raise PhyFreqError( '{0} is not valid for {1}'
                                 .format( repr( freq), repr(self)))
+        # do not use cocotb at chip level    
+        # self.preamble = BinaryValue( value = 0, bits = 16)
+        # self.sfd      = BinaryValue( '11100101')
+
+    def ppdu( self, payload):
+        # find out payload length
+        load = BinaryValue( payload) 
+        if load.len < 5 or \
+           ( load.len > 6 and load.len < 9) or \
+           load.len > constants.aMaxPHYPacketSize:
+            raise PPDUErorr( "Invalid frame length: {0}".format( load.len))
+        
+        return self.preamble + self.sfd + \
+            BinaryValue( load.len, bits = 7) + \
+            BinaryValue( 0, bits = 1) + \
+            load
 
 
 class BPSKPhy( Phy):
